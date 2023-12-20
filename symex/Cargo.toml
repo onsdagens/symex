@@ -19,6 +19,7 @@ rand = "0.8.5"
 object = "0.32.1"
 
 armv6-m-instruction-parser = "0.1"
+riscv-instruction-parser = {path="../../riscv-instruction-parser"}
 gimli = "0.28.0"
 regex = "1.10.2"
 
