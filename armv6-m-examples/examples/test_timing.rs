@@ -8,6 +8,7 @@
 #[link_section = ".boot2"]
 #[used]
 pub static BOOT_LOADER: [u8; 256] = rp2040_boot2::BOOT_LOADER_W25Q080;
+//pub static BOOT_LOADER: [u8; 256] = rp2040_boot2::BOOT_LOADER_RAM_MEMCPY;
 
 use cortex_m::peripheral::{syst::SystClkSource, SYST};
 use defmt::*;
@@ -20,6 +21,7 @@ use core::arch::asm;
 use rp2040_boot2;
 use rp2040_hal as hal;
 use symex_lib::{any, assume};
+use symex_lib::{end_cyclecount, start_cyclecount};
 
 use hal::{
     clocks::{init_clocks_and_plls, Clock},
@@ -31,11 +33,14 @@ use hal::{
 #[inline(never)]
 #[no_mangle]
 fn measure_symex() {
-    nop_loop()
+    start_cyclecount();
+    nop_loop();
+    end_cyclecount();
 }
 
 #[inline(never)]
 #[no_mangle]
+//#[link_section = ".ram_code"]
 fn nop_loop() {
     for _ in 0..10000 {
         unsafe {
@@ -44,11 +49,24 @@ fn nop_loop() {
     }
 }
 
+#[no_mangle]
+#[inline(never)]
+//#[link_section = ".ram_code"]
+fn measure_hw() -> u32 {
+    let start = SYST::get_current();
+    nop_loop();
+    let stop = SYST::get_current();
+    start - stop
+}
 
 #[entry]
 fn main() -> ! {
     info!("Program start");
     let mut pac = pac::Peripherals::take().unwrap();
+
+    // try disable cache
+    //pac.XIP_CTRL.ctrl.write(|w| {w.en().bit(false)});
+
     let mut core = pac::CorePeripherals::take().unwrap();
     let mut watchdog = Watchdog::new(pac.WATCHDOG);
     let sio = Sio::new(pac.SIO);
@@ -74,10 +92,7 @@ fn main() -> ! {
     systic.set_clock_source(SystClkSource::Core);
     systic.set_reload(systic_reload_time);
     systic.enable_counter();
-    let start = SYST::get_current();
-    nop_loop();
-    let end = SYST::get_current();
-    let cycles = start - end;
+    let cycles = measure_hw();
     info!("cycles: {}", cycles);
     info!("program end");
     loop {}
@@ -85,4 +100,4 @@ fn main() -> ! {
 
 // End of file
 // 40065 measured rp2040
-// 40010 counted symex
+// 40016 counted symex

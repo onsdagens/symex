@@ -22,10 +22,16 @@ fn main() {
         .write_all(include_bytes!("memory.x"))
         .unwrap();
     println!("cargo:rustc-link-search={}", out.display());
+    File::create(out.join("mem_link.x"))
+        .unwrap()
+        .write_all(include_bytes!("mem_link.x"))
+        .unwrap();
+    println!("cargo:rustc-link-search={}", out.display());
 
     // By default, Cargo will re-run a build script whenever
     // any file in the project changes. By specifying `memory.x`
     // here, we ensure the build script is only re-run when
     // `memory.x` is changed.
     println!("cargo:rerun-if-changed=memory.x");
+    println!("cargo:rerun-if-changed=mem_link.x");
 }

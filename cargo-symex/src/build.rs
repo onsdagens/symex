@@ -125,7 +125,7 @@ pub fn generate_binary_build_command(opts: &Settings) -> Command {
     if opts.release {
         cargo.arg("--release");
     }
-    
+
     cargo
 }
 

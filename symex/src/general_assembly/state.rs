@@ -31,7 +31,9 @@ pub struct GAState {
     pub constraints: DSolver,
     pub marked_symbolic: Vec<Variable>,
     pub memory: ArrayMemory,
+    pub count_cycles: bool,
     pub cycle_count: usize,
+    pub cycle_laps: Vec<(usize, String)>,
     pub last_instruction: Option<Instruction>,
     pub last_pc: u64,
     pub registers: HashMap<String, DExpr>,
@@ -42,6 +44,7 @@ pub struct GAState {
 }
 
 impl GAState {
+    /// Create a new state.
     pub fn new(
         ctx: &'static DContext,
         project: &'static Project,
@@ -89,6 +92,7 @@ impl GAState {
             marked_symbolic: Vec::new(),
             memory,
             cycle_count: 0,
+            cycle_laps: vec![],
             registers,
             pc_register: pc_reg,
             flags,
@@ -96,6 +100,7 @@ impl GAState {
             has_jumped: false,
             last_instruction: None,
             last_pc: pc_reg,
+            count_cycles: true,
         })
     }
 
@@ -107,7 +112,7 @@ impl GAState {
         self.has_jumped = true;
     }
 
-    /// Indicates if the last executed instruction has a conditional branch that branched.
+    /// Indicates if the last executed instruction was a conditional branch that branched.
     pub fn get_has_jumped(&self) -> bool {
         self.has_jumped
     }
@@ -122,7 +127,13 @@ impl GAState {
         self.instruction_counter
     }
 
+    /// Increment the cycle counter with the cycle count of the last instruction.
     pub fn increment_cycle_count(&mut self) {
+        // do nothing if cycles should not be counted
+        if !self.count_cycles {
+            return;
+        }
+
         let cycles = match &self.last_instruction {
             Some(i) => match i.max_cycle {
                 super::instruction::CycleCount::Value(v) => v,
@@ -138,10 +149,12 @@ impl GAState {
         self.cycle_count += cycles;
     }
 
+    /// Update the last instruction that was executed.
     pub fn set_last_instruction(&mut self, instruction: Instruction) {
         self.last_instruction = Some(instruction);
     }
 
+    /// Create a state used for testing.
     pub fn create_test_state(
         project: &'static Project,
         ctx: &'static DContext,
@@ -176,6 +189,7 @@ impl GAState {
             marked_symbolic: Vec::new(),
             memory,
             cycle_count: 0,
+            cycle_laps: vec![],
             registers,
             pc_register: pc_reg,
             flags,
@@ -183,10 +197,12 @@ impl GAState {
             has_jumped: false,
             last_instruction: None,
             last_pc: pc_reg,
+            count_cycles: true,
         }
     }
 
-    pub fn set_register(&mut self, register: String, expr: DExpr) {
+    /// Set a value to a register.
+    pub fn set_register(&mut self, register: String, expr: DExpr) -> Result<()> {
         // crude solution should prbobly change
         if register == "PC" {
             let value = match expr.get_constant() {
@@ -195,29 +211,37 @@ impl GAState {
             };
             self.pc_register = value;
         }
-        self.registers.insert(register, expr);
-    }
 
-    pub fn set_pc(&mut self, value: u64) {
-        self.pc_register = value
-    }
-
-    pub fn get_pc(&self) -> u64 {
-        self.pc_register
-    }
-
-    pub fn get_register(&self, register: String) -> Option<DExpr> {
-        match self.registers.get(&register) {
-            Some(v) => Some(v.to_owned()),
-            None => None,
+        match self.project.get_register_write_hook(&register) {
+            Some(hook) => hook(self, expr),
+            None => {
+                self.registers.insert(register, expr);
+                Ok(())
+            }
         }
     }
 
+    /// Get the value stored at a register.
+    pub fn get_register(&mut self, register: String) -> Result<Option<DExpr>> {
+        // check register hooks
+        match self.project.get_register_read_hook(&register) {
+            // run hook if found
+            Some(hook) => Ok(Some(hook(self)?)),
+            // if no hook found read like normal
+            None => match self.registers.get(&register) {
+                Some(v) => Ok(Some(v.to_owned())),
+                None => Ok(None),
+            },
+        }
+    }
+
+    /// Set the value of a flag.
     pub fn set_flag(&mut self, flag: String, expr: DExpr) {
         trace!("flag {} set to {:?}", flag, expr);
         self.flags.insert(flag, expr);
     }
 
+    /// Get the value of a flag.
     pub fn get_flag(&mut self, flag: String) -> Option<DExpr> {
         match self.flags.get(&flag) {
             Some(v) => Some(v.to_owned()),
@@ -225,6 +249,7 @@ impl GAState {
         }
     }
 
+    /// Get the expression for a condition based on the current flag values.
     pub fn get_expr(&mut self, condition: &Condition) -> Result<DExpr> {
         Ok(match condition {
             Condition::EQ => self.get_flag("Z".to_owned()).unwrap(),
@@ -271,6 +296,7 @@ impl GAState {
         })
     }
 
+    /// Get the next instruction based on the address in the PC register.
     pub fn get_next_instruction(&self) -> Result<HookOrInstruction> {
         let pc = self.pc_register & !(0b1); // Not applicable for all architectures TODO: Fix this.;
         match self.project.get_pc_hook(pc) {
@@ -289,6 +315,7 @@ impl GAState {
         Ok(self.memory.write(address, value)?)
     }
 
+    /// Read a word form memory. Will respect the endianness of the project.
     pub fn read_word_from_memory(&self, address: &DExpr) -> Result<DExpr> {
         match address.get_constant() {
             Some(address_const) => {
@@ -319,6 +346,7 @@ impl GAState {
         }
     }
 
+    /// Write a word to memory. Will respect the endianess of the project.
     pub fn write_word_to_memory(&mut self, address: &DExpr, value: DExpr) -> Result<()> {
         match address.get_constant() {
             Some(address_const) => {

@@ -72,6 +72,8 @@ impl<'vm> GAExecutor<'vm> {
                         return Ok(PathResult::Suppress);
                     }
                     crate::general_assembly::project::PCHook::Intrinsic(f) => {
+                        // set last instruction to empty to no count instruction twice
+                        self.state.last_instruction = None;
                         f(&mut self.state)?;
                         continue;
                     }
@@ -109,6 +111,11 @@ impl<'vm> GAExecutor<'vm> {
         trace!("Getting memmory addr: {:?}", address);
         match address.get_constant() {
             Some(const_addr) => {
+                // check for hook and return early
+                if let Some(hook) = self.project.get_memory_read_hook(const_addr) {
+                    return hook(&mut self.state, const_addr);
+                }
+
                 if self.project.address_in_range(const_addr) {
                     if bits == self.project.get_word_size() {
                         // full word
@@ -144,6 +151,11 @@ impl<'vm> GAExecutor<'vm> {
         trace!("Setting memmory addr: {:?}", address);
         match address.get_constant() {
             Some(const_addr) => {
+                // check for hook and return early
+                if let Some(hook) = self.project.get_memory_write_hook(const_addr) {
+                    return hook(&mut self.state, const_addr, data, bits);
+                }
+
                 if self.project.address_in_range(const_addr) {
                     Err(super::GAError::WritingToStaticMemoryProhibited)
                 } else {
@@ -169,7 +181,7 @@ impl<'vm> GAExecutor<'vm> {
         local: &HashMap<String, DExpr>,
     ) -> Result<DExpr> {
         match operand {
-            Operand::Register(name) => match self.state.get_register(name.to_owned()) {
+            Operand::Register(name) => match self.state.get_register(name.to_owned())? {
                 Some(v) => Ok(v),
                 None => {
                     // If register not writen to asume it can be any value
@@ -182,7 +194,7 @@ impl<'vm> GAExecutor<'vm> {
                         value: value.clone(),
                         ty: ExpressionType::Integer(self.project.get_word_size() as usize),
                     });
-                    self.state.set_register(name.to_owned(), value.clone());
+                    self.state.set_register(name.to_owned(), value.clone())?;
                     Ok(value)
                 }
             },
@@ -215,7 +227,7 @@ impl<'vm> GAExecutor<'vm> {
         match operand {
             Operand::Register(v) => {
                 trace!("Setting register {} to {:?}", v, value);
-                self.state.set_register(v.to_owned(), value)
+                self.state.set_register(v.to_owned(), value)?
             }
             Operand::Immidiate(_) => panic!(), // not prohibited change to error later
             Operand::AddressInLocal(local_name, width) => {
@@ -242,7 +254,7 @@ impl<'vm> GAExecutor<'vm> {
     /// Execute a single instruction.
     fn execute_instruction(&mut self, i: &Instruction) -> Result<()> {
         // update last pc
-        let new_pc = self.state.get_register("PC".to_owned()).unwrap();
+        let new_pc = self.state.get_register("PC".to_owned())?.unwrap();
         self.state.last_pc = new_pc.get_constant().unwrap();
 
         // Always increment pc before executing the operations
@@ -254,7 +266,7 @@ impl<'vm> GAExecutor<'vm> {
                     .ctx
                     .from_u64((i.instruction_size / 8) as u64, self.project.get_ptr_size()),
             ),
-        );
+        )?;
 
         // reset has branched before execution of instruction.
         self.state.reset_has_jumped();
@@ -413,7 +425,7 @@ impl<'vm> GAExecutor<'vm> {
                     if constant_c {
                         self.state.set_has_jumped();
                         let destination = self.get_operand_value(destination, &local)?;
-                        self.state.set_register("PC".to_owned(), destination);
+                        self.state.set_register("PC".to_owned(), destination)?;
                     }
                     return Ok(());
                 }
@@ -437,11 +449,11 @@ impl<'vm> GAExecutor<'vm> {
                         self.state.set_has_jumped();
                         Ok(self.get_operand_value(destination, &local)?)
                     }
-                    (false, true) => Ok(self.state.get_register("PC".to_owned()).unwrap()), // safe to asume PC exist
+                    (false, true) => Ok(self.state.get_register("PC".to_owned())?.unwrap()), // safe to asume PC exist
                     (false, false) => Err(SolverError::Unsat),
                 }?;
 
-                self.state.set_register("PC".to_owned(), destination);
+                self.state.set_register("PC".to_owned(), destination)?;
             }
             Operation::SetNFlag(operand) => {
                 let value = self.get_operand_value(operand, &local)?;
@@ -740,6 +752,12 @@ mod test {
             object::Architecture::Arm,
             HashMap::new(),
             HashMap::new(),
+            HashMap::new(),
+            HashMap::new(),
+            HashMap::new(),
+            vec![],
+            HashMap::new(),
+            vec![],
         ));
         let project = Box::leak(project);
         let context = Box::new(DContext::new());
@@ -1052,7 +1070,6 @@ mod test {
         let r0 = Operand::Register("R0".to_owned());
         let imm_42 = Operand::Immidiate(DataWord::Word32(42));
         let imm_minus_42 = Operand::Immidiate(DataWord::Word32(-42i32 as u32));
-        let imm_imin = Operand::Immidiate(DataWord::Word32(i32::MIN as u32));
         let imm_16 = Operand::Immidiate(DataWord::Word32(16));
         let imm_minus_16 = Operand::Immidiate(DataWord::Word32(-16i32 as u32));
 
@@ -1127,11 +1144,8 @@ mod test {
 
         let imm_42 = Operand::Immidiate(DataWord::Word32(42));
         let imm_12 = Operand::Immidiate(DataWord::Word32(12));
-        let imm_0 = Operand::Immidiate(DataWord::Word32(0));
         let imm_imin = Operand::Immidiate(DataWord::Word32(i32::MIN as u32));
         let imm_imax = Operand::Immidiate(DataWord::Word32(i32::MAX as u32));
-        let imm_16 = Operand::Immidiate(DataWord::Word32(16));
-        let imm_minus70 = Operand::Immidiate(DataWord::Word32(-70i32 as u32));
 
         // no overflow
         let operation = Operation::SetVFlag {

@@ -67,6 +67,8 @@ fn run() -> Result<()> {
 
 #[cfg(not(feature = "llvm"))]
 fn run_elf(args: Args) -> Result<()> {
+    use symex::general_assembly::RunConfig;
+
     use crate::build::generate_binary_build_command;
 
     debug!("Run elf file.");
@@ -101,14 +103,16 @@ fn run_elf(args: Args) -> Result<()> {
     };
     debug!("Starting analasys on target: {path}, function: {function_name}");
 
-    // let cfg = RunConfig {
-    //     solve_inputs: true,
-    //     solve_symbolics: true,
-    //     solve_output: true,
-    //     solve_for: symex::run::SolveFor::All,
-    // };
+    let cfg = RunConfig {
+        pc_hooks: vec![],
+        register_read_hooks: vec![],
+        register_write_hooks: vec![],
+        memory_read_hooks: vec![],
+        memory_write_hooks: vec![],
+        show_path_results: true,
+    };
 
-    symex::run_elf::run_elf(&path, &function_name)?;
+    symex::run_elf::run_elf(&path, &function_name, cfg)?;
     Ok(())
 }
 

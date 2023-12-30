@@ -1,0 +1,7 @@
+[package]
+name = "wcet-analasis-examples"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+symex = { path = "../symex", version = "*" }

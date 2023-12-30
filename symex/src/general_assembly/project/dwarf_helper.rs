@@ -3,7 +3,8 @@
 use std::collections::{HashMap, HashSet};
 
 use gimli::{
-    AttributeValue, DW_AT_low_pc, DW_TAG_subprogram, DebugAbbrev, DebugInfo, DebugPubNames, Reader, DW_AT_name, DebugStr,
+    AttributeValue, DW_AT_low_pc, DW_AT_name, DW_TAG_subprogram, DebugAbbrev, DebugInfo,
+    DebugPubNames, DebugStr, Reader,
 };
 use regex::Regex;
 use tracing::trace;
@@ -14,6 +15,7 @@ use super::{PCHook, PCHooks};
 ///
 /// It does this by finding the name of the symbol in the dwarf debug data and if it is a function(subprogram)
 /// it adds the address and hook to the hooks list.
+#[allow(dead_code)]
 pub fn construct_pc_hooks<R: Reader>(
     hooks: Vec<(Regex, PCHook)>,
     pub_names: &DebugPubNames<R>,
@@ -83,9 +85,7 @@ pub fn construct_pc_hooks_no_index<R: Reader>(
                 None => continue,
             };
             let entry_name = match attr {
-                AttributeValue::DebugStrRef(s) => {
-                    s
-                },
+                AttributeValue::DebugStrRef(s) => s,
                 _ => continue,
             };
 
@@ -106,7 +106,6 @@ pub fn construct_pc_hooks_no_index<R: Reader>(
                     }
                 }
             }
-
         }
     }
     if found_hooks.len() < hooks.len() {

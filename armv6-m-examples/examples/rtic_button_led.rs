@@ -22,9 +22,12 @@ mod app {
         },
         pac, Sio, Watchdog, I2C,
     };
-    use rtic_sync::{channel::{Receiver, Sender}, make_channel};
+    use rtic_sync::{
+        channel::{Receiver, Sender},
+        make_channel,
+    };
 
-    use core::{mem::MaybeUninit};
+    use core::mem::MaybeUninit;
     use embedded_hal::digital::v2::InputPin;
     use embedded_hal::digital::v2::{OutputPin, ToggleableOutputPin};
     use fugit::RateExtU32;
@@ -57,7 +60,7 @@ mod app {
         led_3: Led3,
         i2c: &'static mut I2CBus,
         button: gpio::Pin<Gpio22, FunctionSio<SioInput>, PullDown>,
-        d_sender: Sender<'static, Instant<u64, 1, 1000000>, 1>
+        d_sender: Sender<'static, Instant<u64, 1, 1000000>, 1>,
     }
 
     #[init(local=[
@@ -154,7 +157,11 @@ mod app {
     ) {
         while let Ok(delay) = receiver.recv().await {
             let now = Timer::now().ticks();
-            defmt::info!("message received at: {} delay until: {}", now, delay.ticks());
+            defmt::info!(
+                "message received at: {} delay until: {}",
+                now,
+                delay.ticks()
+            );
             Timer::delay_until(delay).await;
             defmt::info!("check empty");
             if receiver.is_empty() {

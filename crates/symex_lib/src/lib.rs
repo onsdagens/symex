@@ -35,11 +35,11 @@ pub fn assume(condition: bool) {
 }
 
 /// Suppresses this path from analysis result
-/// 
+///
 /// The path will still be analyzed but no output will be generated for the path
 /// unless some other error occur before suppress_path is called.
 /// This is a safer option to [`ignore_path`] that will not affect soundness.
-/// 
+///
 /// # Example
 /// ```rust
 /// # use symex_lib::symbolic;
@@ -59,8 +59,20 @@ pub fn assume(condition: bool) {
 /// # }
 /// ```
 #[inline(never)]
-fn suppress_path() {
+pub fn suppress_path() {
     panic!()
+}
+
+#[inline(never)]
+pub fn start_cyclecount() {
+    let mut s: i32 = 0;
+    black_box(&mut s);
+}
+
+#[inline(never)]
+pub fn end_cyclecount() {
+    let mut s: i64 = 0;
+    black_box(&mut s);
 }
 
 /// Creates a new symbolic value for `value`. This removes all constraints.
