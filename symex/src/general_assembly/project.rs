@@ -237,6 +237,7 @@ impl Project {
             Architecture::Arm => {
                 armv6_m_instruction_parser::instructons::Instruction::add_pc_hooks(&mut pc_hooks)
             }
+            Architecture::Riscv32 => riscv_instruction_parser::instructons::Instruction::add_pc_hooks(&mut pc_hooks),
             _ => todo!(),
         }
 
@@ -363,6 +364,11 @@ impl Project {
                 let arm_instruction = parse(data).unwrap();
                 debug!("instruction read: {:?}", arm_instruction);
                 Ok(arm_instruction.translate())
+            }
+            object::Architecture::Riscv32 => {
+                let riscv_instruction = riscv_instruction_parser::parse(data).unwrap();
+                debug!("instruction read: {:?}", riscv_instruction);
+                Ok(riscv_instruction.translate())
             }
             _ => todo!(),
         }

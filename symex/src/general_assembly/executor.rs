@@ -204,15 +204,29 @@ impl<'vm> GAExecutor<'vm> {
                 self.get_memory(address, *width)
             }
             Operand::AddressWithOffset {
-                address: _,
-                offset_reg: _,
-                width: _,
-            } => todo!(),
+                address,
+                offset_reg,
+                width,
+            } =>{                    
+                    let address = self.get_dexpr_from_dataword(*address);
+                    let offset = self.get_operand_value(&Operand::Register(offset_reg.to_string()), local)?;
+                    println!("{:?}+{:?}={:?} grephook get value: {:?}", address, offset, address.add(&offset), self.get_memory(&address.add(&offset), *width));
+                    self.get_memory(&address.add(&offset), *width)
+            } ,
             Operand::Local(k) => Ok((local.get(k).unwrap()).to_owned()),
             Operand::AddressInLocal(local_name, width) => {
                 let address =
                     self.get_operand_value(&Operand::Local(local_name.to_owned()), local)?;
                 self.get_memory(&address, *width)
+            }
+            Operand::Flag(f) => {
+                match self.state.get_flag(f.to_owned()) {
+                    Some(v) => Ok(v),
+                    None => {
+                        // This should never happen since flags are initialized on start
+                        panic!()
+                    }
+                }
             }
         }
     }
@@ -240,13 +254,19 @@ impl<'vm> GAExecutor<'vm> {
                 self.set_memory(value, &address, *width)?;
             }
             Operand::AddressWithOffset {
-                address: _,
-                offset_reg: _,
-                width: _,
-            } => todo!(),
+                address,
+                offset_reg,
+                width,
+            } => {
+                    let address = self.get_dexpr_from_dataword(*address);
+                    let offset = self.get_operand_value(&Operand::Register(offset_reg.to_string()), local)?;  
+                    println!("{:?}+{:?}={:?} grephook set value: {:?}", address, offset, address.add(&offset), value);
+                    self.set_memory(value, &address.add(&offset), *width)?;
+                },
             Operand::Local(k) => {
                 local.insert(k.to_owned(), value);
             }
+            _ => todo!(),
         }
         Ok(())
     }
@@ -461,7 +481,7 @@ impl<'vm> GAExecutor<'vm> {
                     .state
                     .ctx
                     .from_u64((self.project.get_word_size() - 1) as u64, 32);
-                let result = value.srl(&shift).resize_unsigned(1);
+                let result = value.srl(&shift).resize_unsigned(32);
                 self.state.set_flag("N".to_owned(), result);
             }
             Operation::SetZFlag(operand) => {

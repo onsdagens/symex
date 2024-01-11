@@ -21,7 +21,7 @@ fn add_architecture_independent_hooks(cfg: &mut RunConfig) {
         trace!("Reset the cycle count");
 
         // jump back to where the function was called from
-        let lr = state.get_register("LR".to_owned()).unwrap().unwrap();
+        let lr = state.get_register("RA".to_owned()).unwrap().unwrap();
         state.set_register("PC".to_owned(), lr)?;
         Ok(())
     };
@@ -31,7 +31,7 @@ fn add_architecture_independent_hooks(cfg: &mut RunConfig) {
         trace!("Stopped counting cycles");
 
         // jump back to where the function was called from
-        let lr = state.get_register("LR".to_owned()).unwrap().unwrap();
+        let lr = state.get_register("RA".to_owned()).unwrap().unwrap();
         state.set_register("PC".to_owned(), lr)?;
         Ok(())
     };
@@ -73,7 +73,11 @@ pub fn run_elf(
 ) -> Result<Vec<VisualPathResult>, GAError> {
     let context = Box::new(DContext::new());
     let context = Box::leak(context);
-
+        use tracing::{span, Level};
+let span = span!(Level::TRACE, "my_span");
+// `enter` returns a RAII guard which, when dropped, exits the span. this
+// indicates that we are in the span for the current lexical scope.
+let _enter = span.enter(); 
     add_architecture_independent_hooks(&mut cfg);
 
     let project = Box::new(general_assembly::project::Project::from_path(path, &cfg)?);

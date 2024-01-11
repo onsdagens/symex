@@ -244,6 +244,12 @@ pub enum Condition {
     /// Signed lower or equal Z = 1 OR N != V
     LE,
 
+    /// Unsigned greater or equal
+    GEU,
+
+    /// Unsigned less than
+    LTU,
+
     /// No condition always true
     None,
 }
@@ -273,7 +279,8 @@ pub enum Operand {
         offset_reg: String,
         width: u32,
     },
-
+    /// Represents a flag register
+    Flag(String),
     /// Represent the value that is local to the instruction.
     Local(String),
 }

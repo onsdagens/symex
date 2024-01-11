@@ -99,9 +99,9 @@ pub fn construct_pc_hooks_no_index<R: Reader>(
                         None => continue 'inner,
                     };
                     found_hooks.insert(name.as_str());
-
+                    
                     if let AttributeValue::Addr(addr_value) = addr {
-                        trace!("found hook for {} att addr: {:#X}", name, addr_value);
+                        trace!("found hook for {} att addr: {:#X}, {}", name, addr_value, name_str);
                         ret.insert(addr_value, *hook);
                     }
                 }
@@ -109,6 +109,9 @@ pub fn construct_pc_hooks_no_index<R: Reader>(
         }
     }
     if found_hooks.len() < hooks.len() {
+        for h in hooks {
+            println!("{:?}", h);
+        }
         println!("Did not find addresses for all hooks.") // fix a proper error here later
     }
 

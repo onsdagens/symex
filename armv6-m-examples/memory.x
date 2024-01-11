@@ -1,16 +1,17 @@
-MEMORY {
-    BOOT2 : ORIGIN = 0x10000000, LENGTH = 0x100
-    FLASH : ORIGIN = 0x10000100, LENGTH = 2048K - 0x100
-    RAM   : ORIGIN = 0x20000000, LENGTH = 256K
-    /*RAM   : ORIGIN = 0x21000000, LENGTH = 256K*/
+MEMORY
+{
+  RAM : ORIGIN = 0x50000000, LENGTH = 16K
+  FLASH : ORIGIN = 0x00000000, LENGTH = 16M
 }
 
-EXTERN(BOOT2_FIRMWARE)
+REGION_ALIAS("REGION_TEXT", FLASH);
+REGION_ALIAS("REGION_RODATA", RAM);
+REGION_ALIAS("REGION_DATA", RAM);
+REGION_ALIAS("REGION_BSS", RAM);
+REGION_ALIAS("REGION_HEAP", RAM);
+REGION_ALIAS("REGION_STACK", RAM);
 
-SECTIONS {
-    /* ### Boot loader */
-    .boot2 ORIGIN(BOOT2) :
-    {
-        KEEP(*(.boot2));
-    } > BOOT2
-} INSERT BEFORE .text;
+PROVIDE(_interrupt0 = DefaultInterruptHandler);
+PROVIDE(_interrupt1 = DefaultInterruptHandler);
+PROVIDE(_interrupt2 = DefaultInterruptHandler);
+PROVIDE(_interrupt3 = DefaultInterruptHandler);

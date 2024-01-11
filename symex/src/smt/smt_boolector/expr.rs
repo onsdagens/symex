@@ -238,7 +238,7 @@ impl BoolectorExpr {
     }
 
     pub fn get_constant_bool(&self) -> Option<bool> {
-        assert_eq!(self.len(), 1);
+        //assert_eq!(self.len(), );
         if let Some(binary_str) = self.0.as_binary_str() {
             Some(binary_str != "0")
         } else {

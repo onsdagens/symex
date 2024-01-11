@@ -77,8 +77,12 @@ impl GAState {
 
         // set the link register to max value to detect when returning from a function
         let end_pc_expr = ctx.from_u64(end_address, ptr_size);
-        registers.insert("LR".to_owned(), end_pc_expr);
+        registers.insert("RA".to_owned(), end_pc_expr);
+        //let zero = ctx.zero(32);
 
+        registers.insert("A0".to_owned(), ctx.unconstrained(32, "registers.A0"));
+        registers.insert("ZERO".to_owned(), ctx.zero(32));
+       // registers.insert("RA".to_owned(), zero.clone());
         let mut flags = HashMap::new();
         flags.insert("N".to_owned(), ctx.unconstrained(1, "flags.N"));
         flags.insert("Z".to_owned(), ctx.unconstrained(1, "flags.Z"));
@@ -204,20 +208,26 @@ impl GAState {
     /// Set a value to a register.
     pub fn set_register(&mut self, register: String, expr: DExpr) -> Result<()> {
         // crude solution should prbobly change
-        if register == "PC" {
-            let value = match expr.get_constant() {
-                Some(v) => v,
-                None => todo!("handle branch to symbolic address"),
-            };
-            self.pc_register = value;
-        }
-
-        match self.project.get_register_write_hook(&register) {
-            Some(hook) => hook(self, expr),
-            None => {
-                self.registers.insert(register, expr);
-                Ok(())
+        if register!="ZERO"{
+            if register == "PC" {
+                let value = match expr.get_constant() {
+                    Some(v) => v,
+                    None => {println!("{:?}",expr );todo!("handle branch to symbolic address")},
+                };
+                self.pc_register = value;
             }
+
+            match self.project.get_register_write_hook(&register) {
+                Some(hook) => hook(self, expr),
+                None => {
+                    self.registers.insert(register, expr);
+                    Ok(())
+                }
+            }
+        }
+        else{
+            self.registers.insert(register, self.ctx.zero(32));
+            Ok(())
         }
     }
 
@@ -261,6 +271,16 @@ impl GAState {
             Condition::VS => self.get_flag("V".to_owned()).unwrap(),
             Condition::VC => self.get_flag("V".to_owned()).unwrap().not(),
             Condition::HI => {
+                let c = self.get_flag("C".to_owned()).unwrap();
+                let z = self.get_flag("Z".to_owned()).unwrap().not();
+                c.and(&z)
+            }
+            Condition::GEU => {
+                let c = self.get_flag("C".to_owned()).unwrap();
+                let z = self.get_flag("Z".to_owned()).unwrap();
+                c.or(&z)
+            }
+            Condition::LTU => {
                 let c = self.get_flag("C".to_owned()).unwrap();
                 let z = self.get_flag("Z".to_owned()).unwrap().not();
                 c.and(&z)
