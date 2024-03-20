@@ -28,7 +28,7 @@ fn main() {
     };
 
     let results = run_elf(path_to_elf_file, function_name, config).unwrap();
-    println!("{:?}", results);
+   // println!("{:?}", results);
     let mut max = 0;
     let paths = results.len();
     for result in results {

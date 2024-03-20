@@ -210,7 +210,6 @@ impl<'vm> GAExecutor<'vm> {
             } =>{                    
                     let address = self.get_dexpr_from_dataword(*address);
                     let offset = self.get_operand_value(&Operand::Register(offset_reg.to_string()), local)?;
-                    println!("{:?}+{:?}={:?} grephook get value: {:?}", address, offset, address.add(&offset), self.get_memory(&address.add(&offset), *width));
                     self.get_memory(&address.add(&offset), *width)
             } ,
             Operand::Local(k) => Ok((local.get(k).unwrap()).to_owned()),
@@ -260,7 +259,6 @@ impl<'vm> GAExecutor<'vm> {
             } => {
                     let address = self.get_dexpr_from_dataword(*address);
                     let offset = self.get_operand_value(&Operand::Register(offset_reg.to_string()), local)?;  
-                    println!("{:?}+{:?}={:?} grephook set value: {:?}", address, offset, address.add(&offset), value);
                     self.set_memory(value, &address.add(&offset), *width)?;
                 },
             Operand::Local(k) => {

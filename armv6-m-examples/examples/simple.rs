@@ -8,17 +8,14 @@
 use symex_lib::{assume, symbolic, Any};
 use core::panic;
 use panic_halt as _;
-//use cortex_m_rt::entry;
 use riscv_rt as _;
 use riscv_rt::entry;
-//use rp2040_hal as _;
 #[no_mangle]
 #[inline(never)]
 fn rust_simple_test(mut t: u32) -> u32 {
     assume(t > 1);
     if t == 2 {
         // This path should never happen.
-        //return 6
        panic!("does not work");
     }
     symbolic(&mut t);
@@ -30,7 +27,6 @@ fn rust_simple_test(mut t: u32) -> u32 {
         4
     }
     else{
-        //panic!("something");
         13
     }
 }

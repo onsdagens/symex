@@ -109,9 +109,9 @@ pub fn construct_pc_hooks_no_index<R: Reader>(
         }
     }
     if found_hooks.len() < hooks.len() {
-        for h in hooks {
-            println!("{:?}", h);
-        }
+        //for h in hooks {
+        //    println!("{:?}", h);
+        //}
         println!("Did not find addresses for all hooks.") // fix a proper error here later
     }
 

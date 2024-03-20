@@ -550,7 +550,7 @@ impl Translatable for Instruction {
                 }
             }
             Operation::ADDI { imm, rs1, rd } => {
-                println!("ADDI {}", imm);
+                //println!("ADDI {}", imm);
                 let operations = vec![
                     GAOperation::Add {
                     destination: riscv_reg_to_ga_operand(rd),

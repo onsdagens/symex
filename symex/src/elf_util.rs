@@ -31,8 +31,7 @@ pub struct VisualPathResult {
     pub end_state: Vec<Variable>,
 
     /// The number of instructions executed in the path
-    pub instruction_count: usize,
-
+    pub instruction_count: usize, 
     /// the maximum number of clock cycles the path can contain
     pub max_cycles: usize,
 
