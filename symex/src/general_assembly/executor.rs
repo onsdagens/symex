@@ -197,16 +197,30 @@ impl<'vm> GAExecutor<'vm> {
                 self.get_memory(address, *width)
             }
             Operand::AddressWithOffset {
-                address: _,
-                offset_reg: _,
-                width: _,
-            } => todo!(),
+                address,
+                offset_reg,
+                width,
+            } => {
+                let address = self.get_dexpr_from_dataword(*address);
+                let offset =
+                    self.get_operand_value(&Operand::Register(offset_reg.to_string()), local)?;
+                self.get_memory(&address.add(&offset), *width)
+            }
             Operand::Local(k) => Ok((local.get(k).unwrap()).to_owned()),
             Operand::AddressInLocal(local_name, width) => {
                 let address =
                     self.get_operand_value(&Operand::Local(local_name.to_owned()), local)?;
                 let address = self.resolve_address(address, &local)?;
                 self.get_memory(address, *width)
+            }
+            Operand::Flag(v) => {
+                match self.state.get_flag(f.to_owned()) {
+                    Some(v) => Ok(v),
+                    // This can never happen since flags are initialized on start
+                    None => {
+                        unreachable!()
+                    }
+                }
             }
         }
     }
@@ -243,6 +257,7 @@ impl<'vm> GAExecutor<'vm> {
             Operand::Local(k) => {
                 local.insert(k.to_owned(), value);
             }
+            Operand::Flag(f) => todo!(),
         }
         Ok(())
     }

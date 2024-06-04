@@ -276,4 +276,6 @@ pub enum Operand {
 
     /// Represent the value that is local to the instruction.
     Local(String),
+    /// Represents a flag register.
+    Flag(String),
 }
