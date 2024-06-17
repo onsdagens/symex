@@ -21,7 +21,7 @@ fn add_architecture_independent_hooks(cfg: &mut RunConfig) {
         trace!("Reset the cycle count (cycle count: {})", state.cycle_count);
 
         // jump back to where the function was called from
-        let lr = state.get_register("LR".to_owned()).unwrap();
+        let lr = state.get_register("RA".to_owned()).unwrap();
         state.set_register("PC".to_owned(), lr)?;
         Ok(())
     };
@@ -34,7 +34,7 @@ fn add_architecture_independent_hooks(cfg: &mut RunConfig) {
         );
 
         // jump back to where the function was called from
-        let lr = state.get_register("LR".to_owned()).unwrap();
+        let lr = state.get_register("RA".to_owned()).unwrap();
         state.set_register("PC".to_owned(), lr)?;
         Ok(())
     };

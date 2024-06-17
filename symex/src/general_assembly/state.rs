@@ -86,7 +86,11 @@ impl GAState {
 
         // set the link register to max value to detect when returning from a function
         let end_pc_expr = ctx.from_u64(end_address, ptr_size);
-        registers.insert("LR".to_owned(), end_pc_expr);
+        //registers.insert("LR".to_owned(), end_pc_expr);
+        registers.insert("RA".to_owned(), end_pc_expr);
+
+        //registers.insert()
+        registers.insert("ZERO".to_owned(), ctx.zero(32));
 
         let mut flags = HashMap::new();
         flags.insert("N".to_owned(), ctx.unconstrained(1, "flags.N"));
@@ -217,37 +221,42 @@ impl GAState {
     /// Set a value to a register.
     pub fn set_register(&mut self, register: String, expr: DExpr) -> Result<()> {
         // crude solution should prbobly change
-        if register == "PC" {
-            let value = match expr.get_constant() {
-                Some(v) => v,
-                None => {
-                    trace!("not a concrete pc try to generate possible values");
-                    let values: Vec<u64> = match self.constraints.get_values(&expr, 500).unwrap() {
-                        crate::smt::Solutions::Exactly(v) => v
-                            .iter()
-                            .map(|n| match n.get_constant() {
-                                Some(v) => v,
-                                None => todo!("e"),
-                            })
-                            .collect(),
-                        crate::smt::Solutions::AtLeast(_v) => todo!(),
-                    };
-                    trace!("{} possible PC values", values.len());
-                    for v in values {
-                        trace!("Possible PC: {:#X}", v);
+        if register != "ZERO" {
+            if register == "PC" {
+                let value = match expr.get_constant() {
+                    Some(v) => v,
+                    None => {
+                        trace!("not a concrete pc try to generate possible values");
+                        let values: Vec<u64> =
+                            match self.constraints.get_values(&expr, 500).unwrap() {
+                                crate::smt::Solutions::Exactly(v) => v
+                                    .iter()
+                                    .map(|n| match n.get_constant() {
+                                        Some(v) => v,
+                                        None => todo!("e"),
+                                    })
+                                    .collect(),
+                                crate::smt::Solutions::AtLeast(_v) => todo!(),
+                            };
+                        trace!("{} possible PC values", values.len());
+                        for v in values {
+                            trace!("Possible PC: {:#X}", v);
+                        }
+                        todo!("handel symbolic branch")
                     }
-                    todo!("handel symbolic branch")
-                }
-            };
-            self.pc_register = value;
-        }
-
-        match self.project.get_register_write_hook(&register) {
-            Some(hook) => hook(self, expr),
-            None => {
-                self.registers.insert(register, expr);
-                Ok(())
+                };
+                self.pc_register = value;
             }
+
+            match self.project.get_register_write_hook(&register) {
+                Some(hook) => hook(self, expr),
+                None => {
+                    self.registers.insert(register, expr);
+                    Ok(())
+                }
+            }
+        } else {
+            Ok(())
         }
     }
 
@@ -333,6 +342,16 @@ impl GAState {
                 let n = self.get_flag("N".to_owned()).unwrap();
                 let v = self.get_flag("V".to_owned()).unwrap();
                 z.and(&n._ne(&v))
+            }
+            Condition::GEU => {
+                let c = self.get_flag("C".to_owned()).unwrap();
+                let z = self.get_flag("Z".to_owned()).unwrap();
+                c.or(&z)
+            }
+            Condition::LTU => {
+                let c = self.get_flag("C".to_owned()).unwrap();
+                let z = self.get_flag("Z".to_owned()).unwrap().not();
+                c.and(&z)
             }
             Condition::None => self.ctx.from_bool(true),
         })

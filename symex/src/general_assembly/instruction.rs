@@ -244,6 +244,12 @@ pub enum Condition {
     /// Signed lower or equal Z = 1 OR N != V
     LE,
 
+    /// Unsigned greater or equal
+    GEU,
+
+    /// Unsigned less than
+    LTU,
+
     /// No condition always true
     None,
 }

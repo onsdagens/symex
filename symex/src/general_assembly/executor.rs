@@ -204,7 +204,9 @@ impl<'vm> GAExecutor<'vm> {
                 let address = self.get_dexpr_from_dataword(*address);
                 let offset =
                     self.get_operand_value(&Operand::Register(offset_reg.to_string()), local)?;
-                self.get_memory(&address.add(&offset), *width)
+                let address_w_offset = self.resolve_address(address.add(&offset), local)?;
+                self.get_memory(address_w_offset, *width)
+                //todo!()
             }
             Operand::Local(k) => Ok((local.get(k).unwrap()).to_owned()),
             Operand::AddressInLocal(local_name, width) => {
@@ -214,7 +216,7 @@ impl<'vm> GAExecutor<'vm> {
                 self.get_memory(address, *width)
             }
             Operand::Flag(v) => {
-                match self.state.get_flag(f.to_owned()) {
+                match self.state.get_flag(v.to_owned()) {
                     Some(v) => Ok(v),
                     // This can never happen since flags are initialized on start
                     None => {
@@ -250,14 +252,24 @@ impl<'vm> GAExecutor<'vm> {
                 self.set_memory(value, address, *width)?;
             }
             Operand::AddressWithOffset {
-                address: _,
-                offset_reg: _,
-                width: _,
-            } => todo!(),
+                address,
+                offset_reg,
+                width,
+                //address: _,
+                //offset_reg: _,
+                //width: _,
+            } => {
+                let address = self.get_dexpr_from_dataword(*address);
+                let offset =
+                    self.get_operand_value(&Operand::Register(offset_reg.to_string()), local)?;
+                let address_w_offset = self.resolve_address(address.add(&offset), local)?;
+                self.set_memory(value, address_w_offset, *width)?;
+                //todo!()
+            }
             Operand::Local(k) => {
                 local.insert(k.to_owned(), value);
             }
-            Operand::Flag(f) => todo!(),
+            Operand::Flag(_) => todo!(),
         }
         Ok(())
     }
