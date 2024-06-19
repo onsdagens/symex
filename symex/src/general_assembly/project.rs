@@ -189,7 +189,7 @@ impl Project {
         };
 
         let segments = Segments::from_file(&obj_file);
-
+        //println!("Segments: {:?} END", segments);
         let endianness = if obj_file.is_little_endian() {
             Endianness::Little
         } else {

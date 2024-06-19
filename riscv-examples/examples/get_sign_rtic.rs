@@ -7,17 +7,15 @@ use hippomenes_rt as _;
 mod app {
     #[shared]
     struct Shared {
-        resource: bool,
+        v: bool,
     }
 
     #[local]
-    struct Local {
-        v: u32,
-    }
+    struct Local {}
 
     #[init]
     fn init(_: init::Context) -> (Shared, Local) {
-        (Shared { resource: true }, Local { v: 500 })
+        (Shared { v: true }, Local {})
     }
 
     #[idle]
@@ -25,14 +23,20 @@ mod app {
         loop {}
     }
 
-    #[task(binds = Interrupt0, priority=2, shared=[resource], local=[v])]
-    fn timer_task(cx: timer_task::Context) {
-        let v = *cx.local.v;
-        for _ in 0..v {
-            unsafe {
-                core::ptr::read_volatile(&v);
+    #[task(binds = Interrupt1, priority = 2, shared = [v])]
+    fn some_task(mut cx: some_task::Context) {
+        cx.shared.v.lock(|v| {
+            if *v {
+                for _ in 0..20 {
+                    unsafe { core::arch::asm!("nop") };
+                }
+            } else {
             }
-        }
+        })
+    }
+    #[task(binds = Interrupt0, priority=2, shared = [v])]
+    fn timer_task(mut cx: timer_task::Context) {
+        cx.shared.v.lock(|v| *v = false);
     }
 }
 

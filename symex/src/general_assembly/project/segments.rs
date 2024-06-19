@@ -1,12 +1,14 @@
 //! A loader that can load all segments from a elf file properly.
 
 use object::{read::elf::ProgramHeader, File, Object};
+#[derive(Debug)]
 pub struct Segment {
     data: Vec<u8>,
     start_address: u64,
     end_address: u64,
 }
 
+#[derive(Debug)]
 pub struct Segments(Vec<Segment>);
 
 impl Segments {
@@ -28,7 +30,14 @@ impl Segments {
         let mut ret = vec![];
         for segment in elf_file.raw_segments() {
             let segment_type = segment.p_type.get(file.endianness());
-            if segment_type == 1 {
+            //println!("flags: {:?}", segment.p_flags(file.endianness()));
+            //println!("vaddr: {:?}", segment.p_vaddr(file.endianness()));
+            //println!("type: {:?}", segment_type);
+            // here, we check if segment is executable.
+            // otherwise, we will init static variables, which gives constant values to static
+            // muts, obviously that's no good.
+            if segment_type == 1 && ((segment.p_flags(file.endianness()) & 0b1) == 1) {
+                //println!("loading");
                 // if it is a LOAD segment
                 let addr_start = segment.p_vaddr.get(file.endianness()) as u64;
                 //let size = segment.p_memsz.get(file.endianness());

@@ -70,7 +70,7 @@ impl Translatable for Instruction {
                     //rd[31:12] == imm
                     GAOperation::Move {
                         destination: riscv_reg_to_ga_operand(rd),
-                        source: Operand::Immidiate(DataWord::Word32(imm << 12)),
+                        source: Operand::Immidiate(DataWord::Word32(imm)),
                     },
                 ];
                 GAInstruction {
@@ -121,7 +121,7 @@ impl Translatable for Instruction {
                     GAOperation::Sub {
                         destination: Operand::Register("temp".to_string()),
                         operand1: Operand::Register("temp".to_string()),
-                        operand2: Operand::Immidiate(DataWord::Word32(-4i32 as u32)),
+                        operand2: Operand::Immidiate(DataWord::Word32(4i32 as u32)),
                     },
                     GAOperation::ConditionalJump {
                         destination: Operand::Register("temp".to_string()),

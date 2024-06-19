@@ -205,9 +205,13 @@ impl<'vm> GAExecutor<'vm> {
                 let offset =
                     self.get_operand_value(&Operand::Register(offset_reg.to_string()), local)?;
                 //println!("resolving get");
+                //println!("offset: {:?}", offset);
                 let address_w_offset = self.resolve_address(address.add(&offset), local)?;
                 //println!("resolving get {}", address_w_offset);
-                self.get_memory(address_w_offset, *width)
+                //println!("addr w offset:{:?}", address_w_offset);
+                let r = self.get_memory(address_w_offset, *width);
+                //println!("val: {:?}", r);
+                r
                 //todo!()
             }
             Operand::Local(k) => Ok((local.get(k).unwrap()).to_owned()),
@@ -397,7 +401,9 @@ impl<'vm> GAExecutor<'vm> {
                 destination,
                 source,
             } => {
+                //println!("source: {:?}", source);
                 let value = self.get_operand_value(source, local)?;
+                //println!("value: {:?}", value);
                 self.set_operand_value(destination, value, local)?;
             }
             Operation::Add {
