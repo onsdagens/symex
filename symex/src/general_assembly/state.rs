@@ -74,7 +74,7 @@ impl GAState {
                 "start of stack not found".to_owned(),
             )),
         }?;
-        debug!("Found stack start at addr: {:#X}.", sp_reg);
+        println!("Found stack start at addr: {:#X}.", sp_reg);
 
         let memory = ArrayMemory::new(ctx, ptr_size, project.get_endianness());
         let mut registers = HashMap::new();

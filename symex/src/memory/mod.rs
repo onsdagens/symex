@@ -53,8 +53,8 @@ pub enum MemoryError {
 
     /// Each allocation has a respective size, this is returned when a read starts inside one
     /// allocation and ends outside of it.
-    #[error("Out of bounds")]
-    OutOfBounds,
+    #[error("Address {0} Out of bounds")]
+    OutOfBounds(u64),
 
     /// Errors passed on from the solver.
     #[error(transparent)]

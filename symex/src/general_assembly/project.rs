@@ -26,7 +26,7 @@ pub enum ProjectError {
     #[error("Unable to parse elf file: {0}")]
     UnableToParseElf(String),
 
-    #[error("Program memmory error")]
+    #[error(transparent)]
     ProgramMemmoryError(#[from] MemoryError),
 
     #[error("Unavalable operation")]
@@ -349,12 +349,15 @@ impl Project {
     /// Get the instruction att a address
     pub fn get_instruction(&self, address: u64) -> Result<Instruction> {
         trace!("Reading instruction from address: {:#010X}", address);
-        match self.get_raw_word(address)? {
+        //println!("get instruction 0x{:08x}", address);
+        let r = match self.get_raw_word(address)? {
             RawDataWord::Word64(d) => self.instruction_from_array_ptr(&d),
             RawDataWord::Word32(d) => self.instruction_from_array_ptr(&d),
             RawDataWord::Word16(d) => self.instruction_from_array_ptr(&d),
             RawDataWord::Word8(_) => todo!(),
-        }
+        };
+        //println!("instruction gotten");
+        r
     }
 
     fn instruction_from_array_ptr(&self, data: &[u8]) -> Result<Instruction> {
@@ -377,11 +380,12 @@ impl Project {
     pub fn get_byte(&self, address: u64) -> Result<u8> {
         match self.segments.read_raw_bytes(address, 1) {
             Some(v) => Ok(v[0]),
-            None => Err(MemoryError::OutOfBounds.into()),
+            None => Err(MemoryError::OutOfBounds(address).into()),
         }
     }
 
     fn get_word_internal(&self, address: u64, width: WordSize) -> Result<DataWord> {
+        //println!("get_word_internal {} {:?}", address, width);
         Ok(match width {
             WordSize::Bit64 => match self.segments.read_raw_bytes(address, 8) {
                 Some(v) => {
@@ -393,7 +397,7 @@ impl Project {
                     })
                 }
                 None => {
-                    return Err(MemoryError::OutOfBounds.into());
+                    return Err(MemoryError::OutOfBounds(address).into());
                 }
             },
             WordSize::Bit32 => match self.segments.read_raw_bytes(address, 4) {
@@ -406,7 +410,7 @@ impl Project {
                     })
                 }
                 None => {
-                    return Err(MemoryError::OutOfBounds.into());
+                    return Err(MemoryError::OutOfBounds(address).into());
                 }
             },
             WordSize::Bit16 => match self.segments.read_raw_bytes(address, 2) {
@@ -419,7 +423,7 @@ impl Project {
                     })
                 }
                 None => {
-                    return Err(MemoryError::OutOfBounds.into());
+                    return Err(MemoryError::OutOfBounds(address).into());
                 }
             },
             WordSize::Bit8 => DataWord::Word8(self.get_byte(address)?),
@@ -450,6 +454,7 @@ impl Project {
     }
 
     pub fn get_raw_word(&self, address: u64) -> Result<RawDataWord> {
+        //println!("get_raw_word {} {:?}", address, self.word_size);
         Ok(match self.word_size {
             WordSize::Bit64 => match self.segments.read_raw_bytes(address, 8) {
                 Some(v) => {
@@ -458,7 +463,7 @@ impl Project {
                     RawDataWord::Word64(data)
                 }
                 None => {
-                    return Err(MemoryError::OutOfBounds.into());
+                    return Err(MemoryError::OutOfBounds(address).into());
                 }
             },
             WordSize::Bit32 => match self.segments.read_raw_bytes(address, 4) {
@@ -468,7 +473,8 @@ impl Project {
                     RawDataWord::Word32(data)
                 }
                 None => {
-                    return Err(MemoryError::OutOfBounds.into());
+                    //println!("get_raw_word failed");
+                    return Err(MemoryError::OutOfBounds(address).into());
                 }
             },
             WordSize::Bit16 => match self.segments.read_raw_bytes(address, 2) {
@@ -478,7 +484,7 @@ impl Project {
                     RawDataWord::Word16(data)
                 }
                 None => {
-                    return Err(MemoryError::OutOfBounds.into());
+                    return Err(MemoryError::OutOfBounds(address).into());
                 }
             },
             WordSize::Bit8 => RawDataWord::Word8([self.get_byte(address)?]),

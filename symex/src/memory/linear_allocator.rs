@@ -11,7 +11,7 @@ pub struct LinearAllocator {
 
 impl LinearAllocator {
     /// All allocations begin at this address.
-    const ALLOC_START: u64 = 0x1000_0000;
+    const ALLOC_START: u64 = 0x5000_0000;
 
     /// Create a new `LinearAllocator` that starts allocating at `ALLOC_START`.
     pub fn new() -> Self {
@@ -25,6 +25,7 @@ impl LinearAllocator {
     /// `bits` must be the correct size, if it is too small subsequent
     /// allocations will be in the same address space.
     pub fn get_address(&mut self, bits: u64, align: u64) -> Result<(u64, u64), MemoryError> {
+        println!("get_address");
         if bits == 0 {
             return Err(MemoryError::ZeroSizedAllocation);
         }
@@ -50,7 +51,7 @@ impl LinearAllocator {
             return Err(MemoryError::AddressSpaceExhausted(bits));
         }
         self.cursor = next_cursor;
-
+        println!("got address");
         debug!(
             "Allocated {} bits ({} bytes) at address: 0x{:x}",
             bits, bytes, start_addr_aligned

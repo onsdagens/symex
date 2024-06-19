@@ -204,7 +204,9 @@ impl<'vm> GAExecutor<'vm> {
                 let address = self.get_dexpr_from_dataword(*address);
                 let offset =
                     self.get_operand_value(&Operand::Register(offset_reg.to_string()), local)?;
+                //println!("resolving get");
                 let address_w_offset = self.resolve_address(address.add(&offset), local)?;
+                //println!("resolving get {}", address_w_offset);
                 self.get_memory(address_w_offset, *width)
                 //todo!()
             }
@@ -262,7 +264,9 @@ impl<'vm> GAExecutor<'vm> {
                 let address = self.get_dexpr_from_dataword(*address);
                 let offset =
                     self.get_operand_value(&Operand::Register(offset_reg.to_string()), local)?;
+                //println!("resolving");
                 let address_w_offset = self.resolve_address(address.add(&offset), local)?;
+                //println!("resolved set {}", address_w_offset);
                 self.set_memory(value, address_w_offset, *width)?;
                 //todo!()
             }
@@ -401,6 +405,7 @@ impl<'vm> GAExecutor<'vm> {
                 operand1,
                 operand2,
             } => {
+                //println!("{:?}, {:?}", operand1, operand2);
                 let op1 = self.get_operand_value(operand1, &local)?;
                 let op2 = self.get_operand_value(operand2, &local)?;
                 let result = op1.add(&op2);

@@ -20,10 +20,10 @@ use crate::{
 type GAInstruction = crate::general_assembly::instruction::Instruction;
 type GAOperation = crate::general_assembly::instruction::Operation;
 
-fn cycle_count(operation: &Operation) -> CycleCount {
+/*fn cycle_count(operation: &Operation) -> CycleCount {
     CycleCount::Value(1) //all instructions are guaranteed to execute within one cycle (save for memory
-                         //ops which are more complex)
-}
+                         //ops which are arch dependent)
+}*/
 
 fn riscv_reg_to_ga_operand(reg: Register) -> Operand {
     Operand::Register(match reg {
@@ -121,7 +121,7 @@ impl Translatable for Instruction {
                     GAOperation::Sub {
                         destination: Operand::Register("temp".to_string()),
                         operand1: Operand::Register("temp".to_string()),
-                        operand2: Operand::Immidiate(DataWord::Word32(4)),
+                        operand2: Operand::Immidiate(DataWord::Word32(-4i32 as u32)),
                     },
                     GAOperation::ConditionalJump {
                         destination: Operand::Register("temp".to_string()),
@@ -310,7 +310,7 @@ impl Translatable for Instruction {
                     GAOperation::Add {
                         destination: Operand::Register("temp".to_string()),
                         operand1: Operand::Register("temp".to_string()),
-                        operand2: Operand::Immidiate(DataWord::Word32(4)),
+                        operand2: Operand::Immidiate(DataWord::Word32(-4i32 as u32)),
                     },
                     GAOperation::ConditionalJump {
                         destination: Operand::Register("temp".to_string()),
@@ -339,7 +339,7 @@ impl Translatable for Instruction {
                     GAOperation::Add {
                         destination: Operand::Register("temp".to_string()),
                         operand1: Operand::Register("temp".to_string()),
-                        operand2: Operand::Immidiate(DataWord::Word32(4)),
+                        operand2: Operand::Immidiate(DataWord::Word32(-4i32 as u32)),
                     },
                     GAOperation::ConditionalJump {
                         destination: Operand::Register("temp".to_string()),
@@ -369,7 +369,7 @@ impl Translatable for Instruction {
                     GAOperation::Add {
                         destination: Operand::Register("temp".to_string()),
                         operand1: Operand::Register("temp".to_string()),
-                        operand2: Operand::Immidiate(DataWord::Word32(4)),
+                        operand2: Operand::Immidiate(DataWord::Word32(-4i32 as u32)),
                     },
                     GAOperation::ConditionalJump {
                         destination: Operand::Register("temp".to_string()),
@@ -404,7 +404,7 @@ impl Translatable for Instruction {
                     GAOperation::Add {
                         destination: Operand::Register("temp".to_string()),
                         operand1: Operand::Register("temp".to_string()),
-                        operand2: Operand::Immidiate(DataWord::Word32(4)),
+                        operand2: Operand::Immidiate(DataWord::Word32(-4i32 as u32)),
                     },
                     GAOperation::ConditionalJump {
                         destination: Operand::Register("temp".to_string()),
@@ -439,7 +439,7 @@ impl Translatable for Instruction {
                     GAOperation::Add {
                         destination: Operand::Register("temp".to_string()),
                         operand1: Operand::Register("temp".to_string()),
-                        operand2: Operand::Immidiate(DataWord::Word32(4)),
+                        operand2: Operand::Immidiate(DataWord::Word32(-4i32 as u32)),
                     },
                     GAOperation::ConditionalJump {
                         destination: Operand::Register("temp".to_string()),
